@@ -58,15 +58,15 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 enum Item{
     unset,
     saddle,
-    ingotIron,
     bread,
+    bucketEmpty,
+    appleGold,
+    record,
     wheat,
     gunpowder,
     silk,
-    bucketEmpty,
-    appleGold,
-    redstone,
-    record
+    ingotIron,
+    redstone
 };
 struct Pos
 {
@@ -178,11 +178,55 @@ __device__ static void getItem(ItemStack* tempItem, int64_t* seed){
     }
 
 }
+/*__device__ static void getItem(ItemStack* tempItem, int64_t* seed){
+    int x = nextInt(seed, 11);
+    switch(x){
+        case 0:
+            tempItem->id = saddle;
+            tempItem->amount = 1;
+        case 1:
+            tempItem->id = ingotIron;
+            tempItem->amount = nextInt(seed, 4) + 1;
+        case 2:
+            tempItem->id = bread;
+            tempItem->amount = 1;
+        case 3:
+            tempItem->id = wheat;
+            tempItem->amount = nextInt(seed, 4) + 1;
+        case 4:
+            tempItem->id = gunpowder;
+            tempItem->amount = nextInt(seed, 4) + 1;
+        case 5:
+            tempItem->id = silk;
+            tempItem->amount = nextInt(seed, 4) + 1;
+        case 6:
+            tempItem->id = bucketEmpty;
+            tempItem->amount = 1;
+        case 7:
+            if(nextInt(seed, 100) == 0){
+                tempItem->id = appleGold;
+                tempItem->amount = 1;
+            }
+        case 8:
+            if(nextInt(seed, 2) == 0){
+                tempItem->id = redstone;
+                tempItem->amount = nextInt(seed, 4) + 1;
+            }
+        case 9:
+            if(nextInt(seed, 10) == 0){
+                tempItem->id = record;
+                tempItem->amount = 1;
+                //We don't have one anyway so I'm unconcerned
+            }
+        default:
+            tempItem->id = unset;
+            tempItem->amount = 1;
+    }
+}*/
 __device__ static bool testSeed(int64_t seed){
     int64_t testSeed = seed;
     int64_t permutationSeed = testSeed;
     int chestCounter = 0;
-    int curChest = 0;
     int itemCounter = 0;
     int firstChest = 0;
     ItemStack firstChestSim[27];
@@ -190,7 +234,6 @@ __device__ static bool testSeed(int64_t seed){
     for(int i = 0; i < 2; i++){
         for(int i2 = 0; i2 < 3; i2++){
             int curChest = 0;
-            int locCounter = 0;
             /*
                 int xChest = (x + random.nextInt(xWiggle * 2 + 1)) - xWiggle;
                 int yChest = ySpawner;
@@ -203,39 +246,34 @@ __device__ static bool testSeed(int64_t seed){
             else if(xChest == 4 && zChest == 4)
                 curChest = 1;
             if(curChest == firstChest){
-                return false;
+                continue;
             }
             if((xChest == 6 && zChest == 2) || xChest == 4 && zChest == 4){
                 for(int i3 = 0; i3 <= 8; i3++){
                     ItemStack it;
                     getItem(&it, &permutationSeed);
-                    int itemIndex = nextInt(&permutationSeed, 26);
-                    if(Chest1[itemIndex].id != 0 && curChest = 1){
-                        if(firstChestSim[itemIndex].id == it.id && (it.id == ingotIron || it.id == wheat || it.id == gunpowder || it.id == silk || it.id == redstone)){
-                            firstChestSim[itemIndex].amount += it.amount;
-                        }
-                        else{
-                            firstChestSim[itemIndex].id = it.id;
-                            firstChestSim[itemIndex].amount = it.amount;
-                        }
-                    }  
-                    if(Chest2[itemIndex].id != 0 && curChest = 2){
-                        if(secondChestSim[itemIndex].id == it.id && (it.id == ingotIron || it.id == wheat || it.id == gunpowder || it.id == silk || it.id == redstone)){
-                            secondChestSim[itemIndex].amount += it.amount;
-                        }
-                        else{
-                            secondChestSim[itemIndex].id = it.id;
-                            secondChestSim[itemIndex].amount = it.amount;
+                    if(it.id != 0){
+                        int itemIndex = nextInt(&permutationSeed, 26);
+                        if(Chest1[itemIndex].id != 0 && curChest == 1){
+                            if(firstChestSim[itemIndex].id == it.id && it.id > record){
+                                firstChestSim[itemIndex].amount += it.amount;
+                            }
+                            else{
+                                firstChestSim[itemIndex].id = it.id;
+                                firstChestSim[itemIndex].amount = it.amount;
+                            }
+                        }  
+                        if(Chest2[itemIndex].id != 0 && curChest == 2){
+                            if(secondChestSim[itemIndex].id == it.id && it.id > record){
+                                secondChestSim[itemIndex].amount += it.amount;
+                            }
+                            else{
+                                secondChestSim[itemIndex].id = it.id;
+                                secondChestSim[itemIndex].amount = it.amount;
+                            }
                         }
                     }
                 }
-                if(locCounter > 4 && curChest == 1 || locCounter > 5 && curChest == 2){
-                    return false;
-                }
-                itemCounter += locCounter;
-            }
-            else{
-                locCounter = 0;
             }
             if(firstChest == 0){
                 firstChest = curChest;
@@ -246,6 +284,7 @@ __device__ static bool testSeed(int64_t seed){
         if((firstChestSim[i].id != Chest1[i].id || firstChestSim[i].amount != Chest1[i].amount) || (secondChestSim[i].id != Chest2[i].id || secondChestSim[i].amount != Chest2[i].amount)){
             return false;
         }
+
     }
     return true;
 }
