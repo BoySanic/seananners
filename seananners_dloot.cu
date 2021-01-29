@@ -209,19 +209,24 @@ __device__ static bool testSeed(int64_t seed){
                 for(int i3 = 0; i3 <= 8; i3++){
                     ItemStack it;
                     getItem(&it, &permutationSeed);
-                    if(it.id == saddle || it.id == gunpowder || it.id == wheat || it.id == bucketEmpty || it.id == silk){
-                        int itemIndex = nextInt(&permutationSeed, 26);
-                        if (Chest1[itemIndex].id == it.id && Chest1[itemIndex].amount > firstChestSim[itemIndex].amount && && firstChestSim[itemIndex].amount + it.amount <= Chest1[itemIndex].amount && curChest == 1){
-                            firstChestSim[itemIndex].id = it.id;
-                            firstChestsim[itemIndex].amount += it.amount;
+                    int itemIndex = nextInt(&permutationSeed, 26);
+                    if(Chest1[itemIndex].id != 0 && curChest = 1){
+                        if(firstChestSim[itemIndex].id == it.id && (it.id == ingotIron || it.id == wheat || it.id == gunpowder || it.id == silk || it.id == redstone)){
+                            firstChestSim[itemIndex].amount += it.amount;
                         }
-                        if (Chest2[itemIndex].id == it.id && Chest2[itemIndex].amount > secondChestSim[itemIndex].amount && && secondChestSim[itemIndex].amount + it.amount <= Chest2[itemIndex].amount && curChest == 2){
-                            secondChestSim[itemIndex].id = it.id;
+                        else{
+                            firstChestSim[itemIndex].id = it.id;
+                            firstChestSim[itemIndex].amount = it.amount;
+                        }
+                    }  
+                    if(Chest2[itemIndex].id != 0 && curChest = 2){
+                        if(secondChestSim[itemIndex].id == it.id && (it.id == ingotIron || it.id == wheat || it.id == gunpowder || it.id == silk || it.id == redstone)){
                             secondChestSim[itemIndex].amount += it.amount;
                         }
-                    }
-                    else{
-                        return false;
+                        else{
+                            secondChestSim[itemIndex].id = it.id;
+                            secondChestSim[itemIndex].amount = it.amount;
+                        }
                     }
                 }
                 if(locCounter > 4 && curChest == 1 || locCounter > 5 && curChest == 2){
@@ -237,12 +242,12 @@ __device__ static bool testSeed(int64_t seed){
             }
         }
     }
-    if(itemCounter == 9){
-        return true;
+    for(int i = 0; i < 27; i++){
+        if((firstChestSim[i].id != Chest1[i].id || firstChestSim[i].amount != Chest1[i].amount) || (secondChestSim[i].id != Chest2[i].id || secondChestSim[i].amount != Chest2[i].amount)){
+            return false;
+        }
     }
-    else{
-        return false;
-    }
+    return true;
 }
 __global__ __launch_bounds__(BLOCK_SIZE,2) static void threadWork(int64_t offset, uint32_t* counter, int64_t* buffer){
     uint64_t seed = (blockIdx.x * blockDim.x + threadIdx.x) + offset;
